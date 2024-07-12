@@ -1,0 +1,14 @@
+﻿$regkey = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces"
+Get-ChildItem $regkey | %{
+$keyname=$null
+$value = $null
+$keyname=$_.Name.Replace("HKEY_LOCAL_MACHINE\","HKLM:\")
+$value=Get-ItemProperty -Path $Keyname -Name NetbiosOptions -ErrorAction SilentlyContinue
+if($value)
+{
+if($value.NetbiosOptions -ne 2)
+{Set-ItemProperty -Path $Keyname -Name NetbiosOptions -Value 2}
+else{}
+}
+else{Set-ItemProperty -Path $Keyname -Name NetbiosOptions -Value 2}
+}
