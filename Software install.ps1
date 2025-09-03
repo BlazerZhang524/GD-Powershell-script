@@ -19,82 +19,58 @@ Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -fil
 exit
 }
 #windows activation
-slmgr.vbs /ipk NPPR9-FWDCX-D2C8J-H872K-2YT43 /skms g2cplic01.nextestate.com /ato /S
+slmgr.vbs /ipk NPPR9-FWDCX-D2C8J-H872K-2YT43 /ato /S
 
-#create folder
-New-Item -Path "C:\" -Name "Workstation_Applications" -ItemType "Directory"
+$Filesource="\\gdcfs01.nextestate.com\GeneralSoftware\Jumpbox_image"
 
-#software1
-copy-item "\\gdsfs01\generalsoftware\7z1900-x64.exe" -Destination "C:\Workstation_Applications"
-$install1=([WMICLASS]"\root\cimv2:win32_Process").Create("C:\Workstation_Applications\7z1900-x64.exe /S")
-
-#software2
-copy-item  "\\gdsfs01\Software\CiscoVPN\anyconnect.msi" -Destination "C:\Workstation_Applications"
-$install2=([WMICLASS]"\root\cimv2:win32_Process").Create("msiexec /I C:\Workstation_Applications\anyconnect.msi /qn")
+#software 1 DUO
+copy-item "$Filesource\DUO\*" -Destination "C:\Workstation_Applications"
+$install2=([WMICLASS]"\root\cimv2:win32_Process").Create("C:\Workstation_applications\Duo Silent Install-Admin.cmd")
+Start-Sleep -Seconds 30
 If ($install2.ReturnValue -eq 0) 
 { 
-"CiscoVPN Install completed! ProcessID:" +$install2.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
+"DUO Install completed! ProcessID:" +$install2.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
 }
 else
 { 
-'CiscoVPN Process create failed with' +$install2.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
+'DUO Process create failed with' +$install2.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
 }
 
-#software3
-copy-item  "\\gdsfs01\Software\CrowdStrike\windowssensor.exe" -Destination "C:\Workstation_Applications"
-$install3=([WMICLASS]"\root\cimv2:win32_Process").Create("C:\Workstation_Applications\windowssensor.exe /install /quiet /norestart CID=95847DF668444BABAE8A108E51D3B7B8-69")
-If ($install3.ReturnValue -eq 0) 
-{ 
-"windowssensor.exe Install completed! ProcessID:" +$install3.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
-}
-else
- { 
- 'windowssensor.exe Process create failed with' +$install3.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
- }
 
-#software4
-copy-item  "\\gdsfs01\Software\Forcepoint\FORCEPOINT-ONE-ENDPOINT-x64-v20.12-Direct.exe" -Destination "C:\Workstation_Applications"
-$install4=([WMICLASS]"\root\cimv2:win32_Process").Create('C:\Workstation_Applications\FORCEPOINT-ONE-ENDPOINT-x64-v20.12-Direct.exe /v"/qn /norestart"')
-If ($install4.ReturnValue -eq 0)
- { 
-  "ForcePoint Install completed! ProcessID:" +$install4.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
- }
-else 
- { 
- 'ForcePoint create failed with' +$install4.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
- }
+#software 2 SCCM
 
-#software5
-copy-item "\\gdsfs01\Software\CiscoVPN\anyconnect-win-4.9.06037-gina-predeploy-k9.msi" -Destination "C:\Workstation_Applications"
-$install5=([WMICLASS]"\root\cimv2:win32_Process").Create("msiexec /I C:\Workstation_Applications\anyconnect-win-4.9.06037-gina-predeploy-k9.msi /quiet /norestart")
-If ($install5.ReturnValue -eq 0)
- { 
-  "Anyconnect SBL Install completed! ProcessID:" +$install5.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
- }
-else 
- { 
- 'Anyconnect SBL installation failed with' +$install4.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
- }
-
-#software6
 New-Item -Path "C:\windows\" -Name "ccmsetup" -ItemType "Directory"
-copy-item  "\\gdsfs01\Software\ccmsetup\*" -Destination "C:\windows\ccmsetup"
-$install6=([WMICLASS]"\root\cimv2:win32_Process").Create("C:\windows\CCMSETUP\CCMSETUP.EXE /S /mp:GDCSCCMpri02 SMSSITECODE=pri")
-If ($install6.ReturnValue -eq 0) 
+copy-item  "$Filesource\ccmsetup\*" -Destination "C:\windows\ccmsetup"
+$install5=([WMICLASS]"\root\cimv2:win32_Process").Create("C:\windows\CCMSETUP\CCMSETUP.EXE /S SMSSITECODE=PRI SMSMP=http://dc1sccmpri02.dc1.greendotcorp.com DNSSUFFIX=dc1.greendotcorp.com /mp:dc1sccmpri02.dc1.greendotcorp.com")
+If ($install5.ReturnValue -eq 0) 
 { 
- "CCM CLIENT completed! ProcessID:" +$install6.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
+ "CCM CLIENT completed! ProcessID:" +$install5.ProcessId+  (Get-Date) | out-file 'C:\Workstation_Applications\log.txt' -Append
 }
 else 
 { 
-'CCMCLIENT Process create failed with' +$install6.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
+'CCMCLIENT Process create failed with' +$install5.ReturnValue+  (Get-Date) | Out-File 'C:\Workstation_Applications\log.txt' -Append
 }
 
-  #bitlocker
-  Enable-Bitlocker -MountPoint c: -UsedSpaceOnly -SkipHardwareTest -RecoveryPasswordProtector
- 
-  #remove scripts 
-  Remove-Item (Get-Item $myinvocation.MyCommand.Path).DirectoryName -Force -Recurse
-  Set-ExecutionPolicy Restricted -Force LocalMachine
+#Install dtex
+Copy-Item \\gdcfs01.nextestate.com\GeneralSoftware\Jumpbox_image\DTEX\* -Destination C:\Workstation_applications
+Start-Process C:\Workstation_applications\DTEXForwarder_6.2.3.12_x64.msi -ArgumentList "/qn ADDRESS=receiver.greendot.dtexservices.com:443"
+Start-Sleep -Seconds 45
+Start-Process C:\Workstation_applications\DTEXForwarder_KeystrokeCapture_1.2.4.msi -ArgumentList "/qn"
+Start-Sleep -Seconds 30
+Start-Process C:\Workstation_applications\DTEXForwarderModule_Windows_ScreenRecording_2.2.3_x64.msi -ArgumentList "/qn"
 
-  #echo log file for ccm
-  Get-Content C:\Windows\ccmsetup\Logs\ccmsetup.log -Wait
+#Computer setup
+Disable-TlsCipherSuite -Name 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA'
+Disable-TlsCipherSuite -Name 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'
+Disable-TlsCipherSuite -Name 'TLS_RSA_WITH_AES_128_CBC_SHA'
+Disable-TlsCipherSuite -Name 'TLS_RSA_WITH_AES_256_CBC_SHA'
+Disable-TlsCipherSuite -Name 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'
+Disable-TlsCipherSuite -Name 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384'
+Disable-TlsCipherSuite -Name 'TLS_RSA_WITH_AES_128_CBC_SHA256'
+Disable-TlsCipherSuite -Name 'TLS_RSA_WITH_AES_256_CBC_SHA256'
+
+Add-ADGroupMember -Identity "ClientPatch_PROD_Win10_JB_Auto_0800" -Members(Get-ADComputer -Identity $env:COMPUTERNAME).SamAccountName
+Set-Service -Name WinRM -StartupType Automatic
+
+#echo log file for ccm
+Get-Content C:\Windows\ccmsetup\Logs\ccmsetup.log -Wait
